@@ -1,0 +1,25 @@
+@import "tailwindcss";
+/* Navbar Animation */
+.navlink {
+  @apply relative text-pink-900 transition-colors duration-300;
+}
+
+.navlink::after {
+  @apply content-[''] absolute left-0 -bottom-1 w-full h-[2px] bg-pink-600 origin-left scale-x-0 transition-transform duration-300;
+}
+
+.navlink:hover {
+  @apply text-pink-600;
+}
+
+.navlink:hover::after {
+  @apply scale-x-100;
+}
+
+.navlink-active {
+  @apply font-bold text-pink-600;
+}
+
+.navlink-active::after {
+  @apply scale-x-100;
+}

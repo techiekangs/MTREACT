@@ -1,6 +1,6 @@
 export default function Contact() {
   return (
-    <div className="ml-64 p-6">
+    <div className="p-6">
       <h1 className="text-4xl font-bold text-pink-700">Contact Us 🌺</h1>
       <p className="mt-4 text-pink-900">
         Feel free to reach out via email at <span className="font-bold">hello@mysite.com</span>.
