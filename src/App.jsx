@@ -10,7 +10,9 @@ import SideNav from './Components/SideNavbar/SideNav';
 import SplashScreen from "./Components/Splash/SplashScreen";
 import Header from './Page/Public/Main';
 import About from './Page/Public/About';
+import Testimony from './Page/Public/Testimony';
 import Contact from './Page/Public/Contact';
+
 
 import Main from './Page/ContentManagement/User/Main';
 import Login from './Page/ContentManagement/User/Login';
@@ -107,6 +109,7 @@ export default function App() {
                 <Routes>
                   <Route path="/" element={<Header />} />
                   <Route path="/About" element={<About />} />
+                  <Route path="/Testimonies" element={<Testimony />} />
                   <Route path="/Contact" element={<Contact />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>

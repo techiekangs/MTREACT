@@ -1,6 +1,55 @@
 import Statistic from './Statistic.jsx';
+import { useEffect, useState } from "react";
 
-export default function Home() {
+import Classic from "../Public/Layout/Classic";
+import Carousel from "../Public/Layout/Carousel";
+import Card from "../Public/Layout/Card";
+
+import { getSectionDetails } from "../../API/ContentManagement/CM_Repository";
+
+
+export default function Home({category, layoutStyle }) {
+  console.log("Header-category",category);
+   console.log("Header-layoutStyle",layoutStyle);
+   const [originalData, setOriginalData] = useState({
+      details: [],
+      bullets: [],
+      images: [],
+      contact: {},
+    });
+    const layouts = {
+      1: Classic,
+      2: Carousel,
+      3: Card,
+    };
+    const SelectedLayout = layouts[layoutStyle] || Classic;
+useEffect(() => {
+    const fetchSectionDetails = async () => {
+      try {
+        const res = await getSectionDetails(category);
+        console.log("res:", res)
+
+        const fetchedData = {
+          details: res?.Details ?? [],
+          bullets: (res?.Bullets ?? []).map((b) => ({
+            ...b,
+            isDeleted: false, // 🌸 add flag for bullets
+          })),
+          images: (res?.Images ?? []).map((img) => ({
+            ...img,
+            isDeleted: false, // 🌼 add flag for images
+          })),
+          contact: res?.Contact ?? {},
+        };
+
+        setOriginalData(fetchedData);
+      } catch (error) {
+        console.error("❌ Failed to load section details:", error);
+      }
+    };
+
+    fetchSectionDetails();
+  }, [category]);
   return (
     <header
       className="relative min-h-screen bg-cover bg-center pt-100 rounded-b-4xl"
@@ -15,12 +64,12 @@ export default function Home() {
        
          <h1 className=" text-white text-2xl flex items-center font-bold">
           {/* <span className="flex-1 h-1 border-t-4 border-white"></span> */}
-          <span className="mx-15 whitespace-nowrap">Better Teacher. Better Education</span>
+          <span className="mx-15 whitespace-nowrap">{originalData.details[0]?.Title}</span>
           {/* <span className="flex-1 h-1 w-50 border-t-4 border-white"></span> */}
         </h1>
          <span className="flex-1 h-1 w-50 border-t-1 border-purple-400 m-5"></span>
         <h2 className="text-white text-7xl font-bold ml-20 mr-20 text-center">        
-         CHAMPIONING TEACHERS, NURTURING GENERATIONS
+         {originalData.details[0]?.Content}
         </h2>
         <div className="mt-12 flex gap-10">
   <button className="w-50 px-6 py-3 rounded-full bg-gradient-to-r from-pink-500 to-pink-600 text-white font-medium text-lg shadow-md hover:scale-105 hover:shadow-xl transform transition-all duration-300 ease-in-out">

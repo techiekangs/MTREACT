@@ -173,7 +173,7 @@ export default function EditContent({ category }) {
             className="border p-2 rounded w-full"
           />
 
-          <label className="block font-semibold">Phone</label>
+          <label className="block font-semibold">Shawn</label>
           <input
             type="text"
             defaultValue={data.contact.Phone || ""}

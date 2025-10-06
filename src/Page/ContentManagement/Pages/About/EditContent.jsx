@@ -1,9 +1,20 @@
 import { useEffect, useState } from "react";
-import api from "../../../../API/api"; // adjust path if needed
+import { CheckCircle } from "lucide-react"
+import { getSectionDetails, saveBullets, saveImages, saveLayoutStyle, saveSectionDetails } from "../../../../API/ContentManagement/CM_Repository"; // adjust path if needed
+//SELECT_LAYOUT SP//
+import Classic from "../../Layout/Classic";
+import Carousel from "../../Layout/Carousel";
+import Card from "../../Layout/Card";
+import CardImg from "../../../../Components/Images/Card.png";
+import CarouselImg from "../../../../Components/Images/Carousel.png";
+import ClassicImg from "../../../../Components/Images/Classic.png";
 
-export default function EditContent({ category }) {
+export default function EditContent({ category, layoutStyle }) {
   const [activeTab, setActiveTab] = useState("current"); // current | compare
-
+  console.log("layoutStyle: ", layoutStyle);
+  const [selectedLayout, setSelectedLayout] = useState(
+    layoutStyle || ""
+  );
   // 🌼 States
   const [originalData, setOriginalData] = useState({
     details: [],
@@ -16,37 +27,38 @@ export default function EditContent({ category }) {
     details: [],
     bullets: [],
     images: [],
-    contact: {},
   });
 
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState("");
   const [error, setError] = useState("");
+  const [docked, setDocked] = useState(false);
 
   // 🌼 Fetch section details
   useEffect(() => {
     const fetchSectionDetails = async () => {
       try {
-        const response = await api.get("ContentManagement/Detail/List/Bullets", {
-          params: { CategoryId: category },
-          headers: {
-            Authorization: "bearer " + localStorage.getItem("token"),
-            IpAddress: "::1",
-            AppName: "MT",
-          },
-        });
-
-        const res = response.data;
+        const res = await getSectionDetails(category);
+        console.log("res:", res)
 
         const fetchedData = {
           details: res?.Details ?? [],
-          bullets: res?.Bullets ?? [],
-          images: res?.Images ?? [],
+          bullets: (res?.Bullets ?? []).map((b) => ({
+            ...b,
+            isDeleted: false, // 🌸 add flag for bullets
+          })),
+          images: (res?.Images ?? []).map((img) => ({
+            ...img,
+            isDeleted: false, // 🌼 add flag for images
+          })),
           contact: res?.Contact ?? {},
         };
 
         setOriginalData(fetchedData);
-        setEditedData(JSON.parse(JSON.stringify(fetchedData))); // deep clone
+        const cloned = JSON.parse(JSON.stringify(fetchedData));
+        cloned.layoutStyle = layoutStyle || 0;
+        setEditedData(cloned); // deep clone
+        console.log(fetchedData);
       } catch (error) {
         console.error("❌ Failed to load section details:", error);
       }
@@ -54,6 +66,25 @@ export default function EditContent({ category }) {
 
     fetchSectionDetails();
   }, [category]);
+
+  const handleChange = (field, index, value) => {
+    setEditedData((prev) => {
+      let updated = { ...prev };
+
+      if (Array.isArray(prev[field]) && typeof index === "number") {
+        // merge with existing object at that index
+        const copy = [...prev[field]];
+        copy[index] = { ...copy[index], ...value };
+        updated[field] = copy;
+      } else {
+        // update whole field (non-array fields)
+        updated[field] = value;
+      }
+
+      console.log("📌 Updated editedData:", updated);
+      return updated;
+    });
+  };
 
   // 🌼 Handlers
   const handleFileChange = (e, i) => {
@@ -92,165 +123,273 @@ export default function EditContent({ category }) {
     }
   };
 
+  const handleSave = async () => {
+    try {
+      const payload = {
+        details: editedData.details,
+        images: editedData.images,
+        bullets: editedData.bullets,
+        layoutStyle: editedData.layoutStyle
+      };
+      console.log("saving..:", editedData.details[0]);
+      const result = await saveSectionDetails(editedData.details);
+      const resultBullet = await saveBullets(editedData.bullets);
+      const resultImages = await saveImages(editedData.images);
+      const resultLayout = await saveLayoutStyle(category, editedData.layoutStyle);
+      alert("Section details saved successfully! 🌸");
+    } catch (error) {
+      alert("Failed to save section details ❌");
+    }
+  };
+
+  const handleClear = () => {
+    setEditedData(JSON.parse(JSON.stringify(originalData)));
+    setPreview("");
+    setFile(null);
+    setError("");
+  };
+
   // 🌼 Compare highlight function
   const highlightChange = (original, edited) =>
     original !== edited ? "bg-yellow-100" : "";
 
+  const layouts = {
+    1: Classic,
+    2: Carousel,
+    3: Card,
+  };
+
+  const layoutOptions = [
+    { id: 1, key: "Classic", img: ClassicImg, label: "Classic" },
+    { id: 2, key: "Carousel", img: CarouselImg, label: "Carousel" },
+    { id: 3, key: "Card", img: CardImg, label: "Card" },
+  ];
+
+
+  const handleSelect = (id) => {
+    setEditedData((prev) => ({
+      ...prev,
+      layoutStyle: id, // store number
+    }));
+  };
+
+  // Add item to an array field
+  const addItem = (field, newItem) => {
+    setEditedData((prev) => {
+      const updated = { ...prev };
+      updated[field] = [...(prev[field] || []), newItem];
+      console.log(`➕ Added to ${field}:`, updated[field]);
+      return updated;
+    });
+  };
+
+  // Remove item from an array field
+  // const removeItem = (field, index) => {
+  //   setEditedData((prev) => {
+  //     const updated = { ...prev };
+  //     updated[field] = prev[field].filter((_, i) => i !== index);
+  //     console.log(`➖ Removed index ${index} from ${field}:`, updated[field]);
+  //     return updated;
+  //   });
+  // };
+  const removeItem = (field, index) => {
+    setEditedData((prev) => {
+      const updated = { ...prev };
+
+      updated[field] = prev[field].map((item, i) =>
+        i === index ? { ...item, isDeleted: true } : item
+      );
+
+      console.log(`🚫 Marked index ${index} from ${field} as deleted:`, updated[field]);
+      return updated;
+    });
+  };
+
+
+  const SelectedLayout = layouts[layoutStyle] || Classic;
+  console.log("selectedLayout:", SelectedLayout);
   return (
-    <div className="p-4 space-y-6 bg-sky-50 rounded">
+    <div className="p-4 space-y-6 rounded">
       {/* 🌼 Tabs */}
-      <div className="flex space-x-6 border-b pb-2">
-        <button
-          onClick={() => setActiveTab("current")}
-          className={`${
-            activeTab === "current" ? "font-bold border-b-2 border-sky-500" : ""
-          }`}
-        >
-          Current Content
-        </button>
-        <button
-          onClick={() => setActiveTab("compare")}
-          className={`${
-            activeTab === "compare" ? "font-bold border-b-2 border-sky-500" : ""
-          }`}
-        >
-          Compare
-        </button>
+      <div className="flex items-center border-b pb-2">
+        {/* Left side buttons */}
+        <div className="flex space-x-6">
+          <button
+            onClick={() => setActiveTab("current")}
+            className={`${activeTab === "current" ? "font-bold border-b-2 border-sky-500" : ""
+              }`}
+          >
+            Current Content
+          </button>
+          <button
+            onClick={() => setActiveTab("compare")}
+            className={`${activeTab === "compare" ? "font-bold border-b-2 border-sky-500" : ""
+              }`}
+          >
+            Compare
+          </button>
+        </div>
+
+        {/* Spacer pushes right-side buttons */}
+        <div className="flex-grow"></div>
+
+        {/* Right side buttons */}
+        <div className="flex space-x-4">
+          {!docked && (
+            <button
+              onClick={() => setDocked(true)}
+              className="px-3 py-1 border rounded bg-sky-500 text-white hover:bg-sky-600 transition"
+            >
+              Show Panel
+            </button>
+          )}
+
+          <button className="px-3 py-1 border rounded hover:bg-sky-200">
+            Preview
+          </button>
+
+          {/* 🌼 Show when panel is hidden */}
+
+          <button className="px-3 py-1 border rounded bg-blue-900 text-sky-100 hover:bg-sky-200">
+            New Btn 2
+          </button>
+        </div>
       </div>
 
       {/* 🌼 Current Content */}
       {activeTab === "current" && (
-        <div className="space-y-6">
-          {editedData.details.map((d, i) => (
-            <div key={i} className="space-y-2 border-b pb-4">
-              <label className="block font-semibold">Title</label>
-              <input
-                type="text"
-                value={d.Title}
-                onChange={(e) => {
-                  const updated = [...editedData.details];
-                  updated[i].Title = e.target.value;
-                  setEditedData({ ...editedData, details: updated });
-                }}
-                className="border p-2 rounded w-full"
+        <div
+          className={`grid gap-6 ${docked ? "grid-cols-3" : "grid-cols-1"
+            } transition-all duration-500 ease-in-out`}
+        >
+          {/* 🌸 Left Column - Content & Bullets */}
+          <div
+            className={`space-y-6 bg-sky-50 m-2 p-6 transition-all duration-500 ${docked ? "col-span-2" : "col-span-1"
+              }`}
+          >
+            {editedData.details.map((d, i) => (
+              <SelectedLayout
+                details={editedData.details}
+                bullets={editedData.bullets}
+                images={editedData.images}
+                CATEGORY_ID={category}
+
+                onChange={handleChange}
+                addItem={addItem}
+                removeItem={removeItem}
               />
 
-              <label className="block font-semibold">Content</label>
-              <textarea
-                value={d.Content}
-                onChange={(e) => {
-                  const updated = [...editedData.details];
-                  updated[i].Content = e.target.value;
-                  setEditedData({ ...editedData, details: updated });
-                }}
-                className="border p-2 rounded w-full"
-              />
-
-              {/* 🌼 Image Selector */}
-              <label className="block font-semibold">Image</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => handleFileChange(e, i)}
-                className="border p-2 rounded w-full"
-              />
-
-              {(preview || d.IMG_URL) && (
-                <img
-                  src={preview || d.IMG_URL}
-                  alt="Preview"
-                  onError={handleImageError}
-                  className="w-48 h-48 object-cover border rounded shadow"
-                />
-              )}
-
-              {error && <p className="text-red-600 text-sm">{error}</p>}
-
-              <button
-                type="button"
-                onClick={handleSaveImage}
-                className="px-4 py-2 bg-sky-600 text-white rounded hover:bg-sky-700"
-              >
-                Save Image
-              </button>
-
-              <label className="block font-semibold">Effectivity Date</label>
-              <input
-                type="date"
-                value={d.Effectivity_Date?.split("T")[0] || ""}
-                onChange={(e) => {
-                  const updated = [...editedData.details];
-                  updated[i].Effectivity_Date = e.target.value;
-                  setEditedData({ ...editedData, details: updated });
-                }}
-                className="border p-2 rounded w-full"
-              />
-
-              <label className="block font-semibold">Expiration Date</label>
-              <input
-                type="date"
-                value={d.Expiration_Date?.split("T")[0] || ""}
-                onChange={(e) => {
-                  const updated = [...editedData.details];
-                  updated[i].Expiration_Date = e.target.value;
-                  setEditedData({ ...editedData, details: updated });
-                }}
-                className="border p-2 rounded w-full"
-              />
-            </div>
-          ))}
-
-          {/* Bullets */}
-          <div>
-            <h2 className="font-bold text-lg mb-2">Bullets</h2>
-            {editedData.bullets.map((b, i) => (
-              <div key={i} className="mb-3 space-y-2 border-b pb-2">
-                <label className="block font-semibold">Detail</label>
-                <input
-                  type="text"
-                  value={b.Detail}
-                  onChange={(e) => {
-                    const updated = [...editedData.bullets];
-                    updated[i].Detail = e.target.value;
-                    setEditedData({ ...editedData, bullets: updated });
-                  }}
-                  className="border p-2 rounded w-full"
-                />
-              </div>
             ))}
+
+            {/* Bullets
+            <div>
+              <h2 className="font-bold text-lg mb-2">Bullets</h2>
+              {editedData.bullets.map((b, i) => (
+                <div key={i} className="mb-3 space-y-2">
+                  <label className="block font-semibold">Detail</label>
+                  <input
+                    type="text"
+                    value={b.Detail}
+                    onChange={(e) => {
+                      const updated = [...editedData.bullets];
+                      updated[i].Detail = e.target.value;
+                      setEditedData({ ...editedData, bullets: updated });
+                    }}
+                    className="border p-2 rounded w-full"
+                  />
+                </div>
+              ))}
+            </div> */}
+
+
           </div>
 
-          {/* Contact */}
-          {category !== "VM_MAIN" && editedData.contact && (
-            <div className="space-y-2">
-              <h2 className="font-bold text-lg">Contact</h2>
-              <label className="block font-semibold">Email</label>
-              <input
-                type="email"
-                value={editedData.contact.Email || ""}
-                onChange={(e) =>
-                  setEditedData({
-                    ...editedData,
-                    contact: { ...editedData.contact, Email: e.target.value },
-                  })
-                }
-                className="border p-2 rounded w-full"
-              />
+          {/* 🌸 Right Column - Sticky Effectivity, Expiration & Actions */}
+          <div
+            className={`
+              space-y-4 pl-4 sticky top-4 self-start m-2
+              transition-transform duration-500 ease-in-out
+              ${docked ? "translate-x-0 opacity-100" : "translate-x-100 opacity-0"}
+            `}
+          >
+            <div className="bg-sky-50 p-6 relative rounded shadow">
+              {/* Dock close button */}
+              <button
+                onClick={() => setDocked(false)}
+                className="absolute top-2 right-2 px-2 py-1 text-xs border rounded bg-white hover:bg-sky-100"
+              >
+                ✕
+              </button>
 
-              <label className="block font-semibold">Phone</label>
-              <input
-                type="text"
-                value={editedData.contact.Phone || ""}
-                onChange={(e) =>
-                  setEditedData({
-                    ...editedData,
-                    contact: { ...editedData.contact, Phone: e.target.value },
-                  })
-                }
-                className="border p-2 rounded w-full"
-              />
+              {editedData.details.map((d, i) => (
+                <div key={i} className="space-y-2">
+                  <label className="block font-semibold text-sky-700">
+                    Effectivity Date
+                  </label>
+                  <input
+                    type="date"
+                    value={d.Effectivity_Date?.split("T")[0] || ""}
+                    onChange={(e) => { handleChange("details", 0, { Effectivity_Date: e.target.value, }); }}
+                    className="border p-2 rounded w-full"
+                  />
+
+                  <label className="block font-semibold text-sky-700">
+                    Expiration Date
+                  </label>
+                  <input
+                    type="date"
+                    value={d.Expiration_Date?.split("T")[0] || ""}
+                    onChange={(e) => { handleChange("details", 0, { Expiration_Date: e.target.value, }); }}
+                    className="border p-2 rounded w-full"
+                  />
+                </div>
+              ))}
+
+              <label className="block font-semibold text-sky-700">
+                Layout Style
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {layoutOptions.map((layout) => (
+                  <div
+                    key={layout.id}
+                    onClick={() => handleSelect(layout.id)}
+                    className={`flex items-center gap-3 border-2 rounded-lg cursor-pointer overflow-hidden 
+        transition-transform hover:scale-105 p-3
+        ${editedData.layoutStyle === layout.id
+                        ? "border-sky-500 shadow-md bg-blue-50" // highlight when selected
+                        : "border-gray-300"
+                      }`}
+                  >
+                    {/* Preview image */}
+                    <img
+                      src={layout.img}
+                      alt={layout.label}
+                      className="w-24 h-20 object-cover rounded-md border"
+                    />
+
+                    {/* Layout Name */}
+                    <div className="font-medium text-gray-700">{layout.label}</div>
+                  </div>
+                ))}
+              </div>
+
+
+              <div className="flex gap-2 mt-4 justify-end">
+                <button
+                  onClick={handleSave}
+                  className="px-4 py-2 bg-sky-600 text-white rounded hover:bg-sky-700"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={handleClear}
+                  className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
+                >
+                  Clear
+                </button>
+              </div>
             </div>
-          )}
+          </div>
         </div>
       )}
 

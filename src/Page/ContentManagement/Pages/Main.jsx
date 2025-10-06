@@ -84,6 +84,7 @@ export default function SectionsTable() {
                   <td className="px-4 py-3 font-medium text-sky-700 group-hover:text-sky-100">
                     <Link
                       to="/ContentManagement/Pages/About"
+                      state={{ layoutStyle: sec.LayoutStyle, sectionID: sec.SECTION_ID }}
                       className="hover:text-sky-100 hover:underline transition-colors"
                     >
                       {sec.Title}
