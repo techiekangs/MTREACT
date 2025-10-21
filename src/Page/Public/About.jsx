@@ -8,7 +8,7 @@ import Carousel from "../Public/Layout/Carousel";
 import Card from "../Public/Layout/Card";
 
 import { getSectionDetails } from "../../API/ContentManagement/CM_Repository";
-export default function About({ category, layoutStyle }) {
+export default function About({ category, layoutStyle, title }) {
   console.log("Category", category);
   console.log("Layout Style", layoutStyle);
   const [originalData, setOriginalData] = useState({
@@ -56,6 +56,7 @@ export default function About({ category, layoutStyle }) {
                 details={originalData.details}
                 bullets={originalData.bullets}
                 images={originalData.images}
+                title={title}
       />
     // <div className="grid grid-cols-1 md:grid-cols-2 gap-15 items-center p-25 mt-16 h-screen snap-start">
     //   {/* Left side - Text */}

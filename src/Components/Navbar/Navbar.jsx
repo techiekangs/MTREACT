@@ -67,7 +67,7 @@ function Navbar() {
               Career
             </NavLink>
    <NavLink
-  to="/contact"
+  to="/Login"
   className={({ isActive }) =>
     `px-4 py-2 rounded font-medium text-white transition-all duration-300 shadow-md
      ${isActive

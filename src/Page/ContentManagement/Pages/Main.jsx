@@ -82,13 +82,18 @@ export default function SectionsTable() {
                   className="group hover:bg-sky-300  transition-colors duration-150 odd:bg-white even:bg-sky-50"
                 >
                   <td className="px-4 py-3 font-medium text-sky-700 group-hover:text-sky-100">
-                    <Link
-                      to="/ContentManagement/Pages/About"
-                      state={{ layoutStyle: sec.LayoutStyle, sectionID: sec.SECTION_ID }}
-                      className="hover:text-sky-100 hover:underline transition-colors"
-                    >
-                      {sec.Title}
-                    </Link>
+<Link
+  to={`/ContentManagement/Pages/Editor/${sec.Title
+    .trim()
+    .replace(/\s+/g, '-')      // replace spaces with hyphens
+    .replace(/[^\w-]/g, '')    // remove special characters
+    .toLowerCase()}`}          // lowercase for consistency
+  state={{ layoutStyle: sec.LayoutStyle, sectionID: sec.SECTION_ID }}
+  className="hover:text-sky-100 hover:underline transition-colors"
+>
+  {sec.Title}
+</Link>
+
                   </td>
                   <td className="px-4 py-3 text-gray-600 group-hover:text-sky-100">
                     {sec.LastModified

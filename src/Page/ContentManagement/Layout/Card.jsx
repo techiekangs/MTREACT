@@ -1,132 +1,177 @@
-import { useEffect, useState } from "react";
-import { ArrowBigRight, ArrowBigLeft } from "lucide-react";
+import { useState } from "react";
 
-export default function Card({ details, bullets, images, CATEGORY_ID, onChange, addItem, removeItem }) {
+export default function Card({
+  details,
+  bullets,
+  images,
+  CATEGORY_ID,
+  onChange,
+  addItem,
+  removeItem,
+}) {
   const [currentImage, setCurrentImage] = useState(0);
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-15 items-center">
-      <div className="flex flex-col items-center">
-        {/* Buttons above */}
-        <div className="flex gap-2 mb-2">
-          <label
-            htmlFor="file-upload"
-            className="cursor-pointer px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+    <div className="grid grid-cols-1 gap-10">
+      {/* LOOP THROUGH EACH CARD */}
+      {details.map((d, i) => {
+        const bullet = bullets[i] || {};
+        const img = images[i] || {};
+
+        if (d.isDeleted) return null;
+
+        return (
+          <div
+            key={i}
+            className="p-4 grid grid-cols-2 gap-10 items-start border rounded-lg shadow bg-white mb-5"
           >
-            + Add Image
-          </label>
-          <input
-            id="file-upload"
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              if (e.target.files?.[0]) {
-                const file = e.target.files[0];
-                const newImage = {
-                  CATEGORY_ID,
-                  IMG_URL: URL.createObjectURL(file),
-                  Upload_Date: new Date().toISOString(),
-                  Upload_By: "currentUser",
-                  CONTENT_ID: 0,
-                  preview: URL.createObjectURL(file),
-                  isDeleted: false
-                };
-                addItem("images", newImage);
-                setCurrentImage(images.length); // show newly added
-              }
-            }}
-          />
-
-          <button
-            type="button"
-            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-            disabled={images.length === 0}
-            onClick={() => removeItem("images", currentImage)}
-          >
-            – Remove
-          </button>
-        </div>
-
-        {/* Main image preview */}
-        {images.length > 0 ? (
-          <img
-            src={images[currentImage]?.IMG_URL || images[currentImage]?.preview}
-            alt="Main Preview"
-            className="w-[420px] md:w-[480px] object-cover border rounded shadow"
-          />
-        ) : (
-          <div className="w-[420px] md:w-[480px] h-64 flex items-center justify-center border rounded bg-gray-100 text-gray-400">
-            No Image
-          </div>
-        )}
-
-        {/* Thumbnails below */}
-        <div className="flex gap-2 mt-4 overflow-x-auto">
-          {images.map((img, i) => !img.isDeleted && (
-            <img
-              key={i}
-              src={img.IMG_URL || img.preview}
-              alt={`Thumbnail ${i + 1}`}
-              className={`w-20 h-20 object-cover border rounded cursor-pointer ${i === currentImage ? "ring-2 ring-blue-500" : ""
-                }`}
-              onClick={() => setCurrentImage(i)}
-            />
-          ))}
-        </div>
-      </div>
-      <div className="p-4 rounded">
-        <div>
-          {details.map((d, i) => (
-            <div key={i} className="mb-4">
-              <input className="text-5xl font-semibold uppercase border p-1 mb-2 w-full" value={d.Title || 'Lorem Ipsum'} onChange={(e) => { onChange("details", 0, { Title: e.target.value, }); }} />
-              <textarea className="text-xl border w-full p-1" value={d.Content || 'Amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'} onChange={(e) => { onChange("details", 0, { Content: e.target.value, }); }} />
-              {bullets.length > 0 && bullets.map((b, j) => !b.isDeleted && (
-                <div key={j} className="flex items-center gap-2 mb-2">
-                  <input
-                    className="text-sm text-gray-600 mt-1 border p-1 flex-1"
-                    value={b.Detail || ""}
-                    onChange={(e) => {
-                      onChange("bullets", j, { ...b, Detail: e.target.value });
-                    }}
-                  />
-                  <button
-                    type="button"
-                    className="px-2 py-1 bg-red-500 text-white rounded"
-                    onClick={() => removeItem("bullets", j)}
-                  >
-                    –
-                  </button>
-                </div>
-              ))}
-
+            {/* LEFT SIDE: IMAGE */}
+            <div className="flex flex-col items-center">
+              {/* Remove Button */}
               <button
                 type="button"
-                className="mt-2 px-3 py-1 bg-green-500 text-white rounded"
-                onClick={() => addItem("bullets", { CATEGORY_ID, Header: "", Detail: "", CONTENT_ID: 0, isDeleted: false })}
+                onClick={() => {
+                  onChange("details", i, { ...d, isDeleted: true });
+                  onChange("images", i, { ...img, isDeleted: true });
+                  onChange("bullets", i, { ...bullet, isDeleted: true });
+                }}
+                className="self-end mb-2 px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
               >
-                + Add Bullet
+                ✕ Remove
               </button>
-              {/* {(d.IMG_URL || d.preview) && (
-              <img
-                src={d.IMG_URL || d.preview}
-                alt="Preview"
-                className="w-32 h-32 object-cover mt-2 border rounded shadow"
-              />
-            )} */}
-              {/* <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => {
-                const updated = [...details];
-                updated[i].preview = URL.createObjectURL(e.target.files[0]);
-                onChange('details', updated);
-              }}
-              className="mt-2 p-2 border rounded w-full"
-            /> */}
+
+              {img?.IMG_URL || img?.preview ? (
+                <img
+                  src={img.IMG_URL || img.preview}
+                  alt={`Preview ${i}`}
+                  className="w-full h-64 object-cover border rounded mb-4"
+                />
+              ) : (
+                <label
+                  htmlFor={`file-upload-${i}`}
+                  className="w-full h-64 flex items-center justify-center border-2 border-dashed rounded bg-gray-100 text-gray-400 cursor-pointer hover:bg-gray-200"
+                >
+                  + Upload Image
+                  <input
+                    id={`file-upload-${i}`}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) {
+                        const file = e.target.files[0];
+                        const newImage = {
+                          CATEGORY_ID,
+                          IMG_URL: URL.createObjectURL(file),
+                          Upload_Date: new Date().toISOString(),
+                          Upload_By: "currentUser",
+                          CONTENT_ID: d.CONTENT_ID ?? 0,
+                          preview: URL.createObjectURL(file),
+                          isDeleted: false,
+                        };
+                        onChange("images", i, newImage);
+                      }
+                    }}
+                  />
+                </label>
+              )}
             </div>
-          ))}
-        </div>
+
+            {/* RIGHT SIDE: TEXT INPUTS */}
+            <div>
+              <input
+                className="text-lg font-semibold uppercase border p-2 mb-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                value={d.Header ?? ""}
+                placeholder="Enter header..."
+                onChange={(e) => onChange("details", i, { Header: e.target.value })}
+              />
+
+              <input
+                className="text-3xl font-bold border p-2 mb-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                value={d.Title ?? ""}
+                placeholder="Enter title..."
+                onChange={(e) => onChange("details", i, { Title: e.target.value })}
+              />
+
+              <textarea
+                className="border w-full p-2 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                value={d.Content ?? ""}
+                placeholder="Enter content..."
+                rows={4}
+                onChange={(e) => onChange("details", i, { Content: e.target.value })}
+              />
+
+              <input
+                className="text-base font-semibold border rounded p-2 mb-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                placeholder="Enter bullet header..."
+                value={bullet.Header || ""}
+                onChange={(e) =>
+                  onChange("bullets", i, { ...bullet, Header: e.target.value })
+                }
+              />
+
+              <textarea
+                className="text-sm text-gray-600 border rounded p-2 resize-none w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                placeholder="Enter bullet details..."
+                value={bullet.Detail || ""}
+                rows={3}
+                onChange={(e) =>
+                  onChange("bullets", i, { ...bullet, Detail: e.target.value })
+                }
+              />
+            </div>
+          </div>
+        );
+      })}
+
+      {/* ADD CARD BUTTON */}
+      <div className="flex justify-center">
+        <button
+          type="button"
+          onClick={() => {
+            console.log("AddCard clicked!");
+
+            const newDetail = {
+              CATEGORY_ID,
+              Content: "",
+              Effectivity_Date: new Date().toISOString(),
+              Expiration_Date: new Date(
+                Date.now() + 30 * 24 * 60 * 60 * 1000
+              ).toISOString(),
+              Header: "",
+              IMG_URL: "",
+              Title: "",
+              isDeleted: false,
+            };
+
+            const newImage = {
+              CATEGORY_ID,
+              IMG_URL: "",
+              Upload_Date: new Date().toISOString(),
+              Upload_By: "currentUser",
+              CONTENT_ID: 0,
+              preview: "",
+              isDeleted: false,
+            };
+
+            const newBullet = {
+              CATEGORY_ID,
+              Header: "",
+              Detail: "",
+              CONTENT_ID: 0,
+              isDeleted: false,
+            };
+
+            // Trigger parent’s addItem only once per type
+            addItem("details", newDetail);
+            addItem("images", newImage);
+            addItem("bullets", newBullet);
+          }}
+          className="py-2 px-4 bg-sky-500 text-white rounded-lg shadow hover:bg-sky-600 transition"
+        >
+          ➕ Add Card
+        </button>
       </div>
     </div>
   );
-};
+}

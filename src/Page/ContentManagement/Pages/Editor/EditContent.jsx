@@ -11,6 +11,8 @@ import ClassicImg from "../../../../Components/Images/Classic.png";
 
 export default function EditContent({ category, layoutStyle }) {
   const [activeTab, setActiveTab] = useState("current"); // current | compare
+  const [effectivity_date, setEffectivityDate] = useState("");
+  const [expiration_date, setExpirationDate] = useState("");
   console.log("layoutStyle: ", layoutStyle);
   const [selectedLayout, setSelectedLayout] = useState(
     layoutStyle || ""
@@ -57,6 +59,10 @@ export default function EditContent({ category, layoutStyle }) {
         setOriginalData(fetchedData);
         const cloned = JSON.parse(JSON.stringify(fetchedData));
         cloned.layoutStyle = layoutStyle || 0;
+
+        setEffectivityDate(fetchedData.details?.[0]?.Effectivity_Date || "");
+        setExpirationDate(fetchedData.details?.[0]?.Expiration_Date || "");
+
         setEditedData(cloned); // deep clone
         console.log(fetchedData);
       } catch (error) {
@@ -136,9 +142,13 @@ export default function EditContent({ category, layoutStyle }) {
       const resultBullet = await saveBullets(editedData.bullets);
       const resultImages = await saveImages(editedData.images);
       const resultLayout = await saveLayoutStyle(category, editedData.layoutStyle);
+      navigate(location.pathname, {
+        replace: true,
+        state: { layoutStyle, sectionID: category }
+      });
       alert("Section details saved successfully! 🌸");
     } catch (error) {
-      alert("Failed to save section details ❌");
+      alert("Failed to save section details ❌", error);
     }
   };
 
@@ -175,6 +185,7 @@ export default function EditContent({ category, layoutStyle }) {
 
   // Add item to an array field
   const addItem = (field, newItem) => {
+    console.log('addItem called!');
     setEditedData((prev) => {
       const updated = { ...prev };
       updated[field] = [...(prev[field] || []), newItem];
@@ -182,6 +193,7 @@ export default function EditContent({ category, layoutStyle }) {
       return updated;
     });
   };
+
 
   // Remove item from an array field
   // const removeItem = (field, index) => {
@@ -267,19 +279,16 @@ export default function EditContent({ category, layoutStyle }) {
             className={`space-y-6 bg-sky-50 m-2 p-6 transition-all duration-500 ${docked ? "col-span-2" : "col-span-1"
               }`}
           >
-            {editedData.details.map((d, i) => (
-              <SelectedLayout
-                details={editedData.details}
-                bullets={editedData.bullets}
-                images={editedData.images}
-                CATEGORY_ID={category}
+            <SelectedLayout
+              details={editedData.details}
+              bullets={editedData.bullets}
+              images={editedData.images}
+              CATEGORY_ID={category}
+              onChange={handleChange}
+              addItem={addItem}
+              removeItem={removeItem}
+            />
 
-                onChange={handleChange}
-                addItem={addItem}
-                removeItem={removeItem}
-              />
-
-            ))}
 
             {/* Bullets
             <div>
@@ -321,14 +330,14 @@ export default function EditContent({ category, layoutStyle }) {
                 ✕
               </button>
 
-              {editedData.details.map((d, i) => (
-                <div key={i} className="space-y-2">
+  
+                <div  className="space-y-2">
                   <label className="block font-semibold text-sky-700">
                     Effectivity Date
                   </label>
                   <input
                     type="date"
-                    value={d.Effectivity_Date?.split("T")[0] || ""}
+                    value={editedData.details[0]?.Effectivity_Date?.split("T")[0] || ""}
                     onChange={(e) => { handleChange("details", 0, { Effectivity_Date: e.target.value, }); }}
                     className="border p-2 rounded w-full"
                   />
@@ -338,17 +347,16 @@ export default function EditContent({ category, layoutStyle }) {
                   </label>
                   <input
                     type="date"
-                    value={d.Expiration_Date?.split("T")[0] || ""}
+                    value={editedData.details[0]?.Expiration_Date?.split("T")[0] || ""}
                     onChange={(e) => { handleChange("details", 0, { Expiration_Date: e.target.value, }); }}
                     className="border p-2 rounded w-full"
                   />
                 </div>
-              ))}
 
               <label className="block font-semibold text-sky-700">
                 Layout Style
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
                 {layoutOptions.map((layout) => (
                   <div
                     key={layout.id}
@@ -364,7 +372,7 @@ export default function EditContent({ category, layoutStyle }) {
                     <img
                       src={layout.img}
                       alt={layout.label}
-                      className="w-24 h-20 object-cover rounded-md border"
+                      className="w-24 h-full object-contain rounded-md border"
                     />
 
                     {/* Layout Name */}

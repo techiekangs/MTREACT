@@ -16,29 +16,80 @@ export const getSectionDetails = async (categoryId) => {
 
 // Save details
 export const saveSectionDetails = async (payload) => {
-  console.log("data payload:", payload)
-  const response = await api.post(
-    "MTBooking/Update/SectionDetails",
-    {
-      CATEGORY_ID: payload[0].CATEGORY_ID,
-      Title: payload[0].Title,
-      Content: payload[0].Content,
-      IMG_URL: payload[0].IMG_URL,
-      Effectivity_Date: payload[0].Effectivity_Date,
-      Expiration_Date: payload[0].Expiration_Date,
-      CONTENT_ID: payload[0].CONTENT_ID
-    },
-    {
-      headers: {
-        Authorization: "bearer " + localStorage.getItem("token"),
-        IpAddress: "::1",
-        AppName: "MT",
-      },
-    }
-  );
-  return response.data;
-};
+  console.log("data payload:", payload);
 
+  if (!payload || payload.length === 0) return null;
+
+  const headers = {
+    Authorization: "bearer " + localStorage.getItem("token"),
+    IpAddress: "::1",
+    AppName: "MT",
+  };
+
+  const results = [];
+
+  for (const item of payload) {
+    let response;
+
+    // 🔹 Case 1: Deleted detail
+    if (item.isDeleted) {
+      response = await api.post(
+        "MTBooking/Delete/SectionDetails",
+        {
+          CATEGORY_ID: item.CATEGORY_ID,
+          Title: item.Title,
+          Content: item.Content,
+          IMG_URL: item.IMG_URL,
+          Effectivity_Date: item.Effectivity_Date,
+          Expiration_Date: item.Expiration_Date,
+          CONTENT_ID: item.CONTENT_ID,
+          Header: item.Header,
+        },
+        { headers }
+      );
+    }
+
+    // 🔹 Case 2: New detail (insert)
+    else if (!item.CONTENT_ID || item.CONTENT_ID === 0) {
+      response = await api.post(
+        "MTBooking/Insert/SectionDetails",
+        {
+          CATEGORY_ID: item.CATEGORY_ID,
+          Title: item.Title,
+          Content: item.Content,
+          IMG_URL: item.IMG_URL,
+          Effectivity_Date: item.Effectivity_Date,
+          Expiration_Date: item.Expiration_Date,
+          CONTENT_ID: item.CONTENT_ID ?? 0,
+          Header: item.Header,
+        },
+        { headers }
+      );
+    }
+
+    // 🔹 Case 3: Update existing detail
+    else {
+      response = await api.post(
+        "MTBooking/Update/SectionDetails",
+        {
+          CATEGORY_ID: item.CATEGORY_ID,
+          Title: item.Title,
+          Content: item.Content,
+          IMG_URL: item.IMG_URL,
+          Effectivity_Date: item.Effectivity_Date,
+          Expiration_Date: item.Expiration_Date,
+          CONTENT_ID: item.CONTENT_ID,
+          Header: item.Header,
+        },
+        { headers }
+      );
+    }
+
+    results.push(response.data);
+  }
+
+  return results;
+};
 export const saveLayoutStyle = async (categoryId, layoutStyle) => {
   console.log("data layout:", { SectionId: categoryId, LayoutStyle: layoutStyle });
 

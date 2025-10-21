@@ -9,6 +9,7 @@ export default function Classic({ details, bullets, images, CATEGORY_ID, onChang
         <div>
           {details.map((d, i) => (
             <div key={i} className="mb-4">
+                            <input className="text-lg font-semibold uppercase border p-1 mb-2 w-full" value={d.Header || 'Lorem Ipsum'} onChange={(e) => { onChange("details", 0, { Header: e.target.value, }); }} />
               <input className="text-5xl font-semibold uppercase border p-1 mb-2 w-full" value={d.Title || 'Lorem Ipsum'} onChange={(e) => { onChange("details", 0, { Title: e.target.value, }); }} />
               <textarea className="text-xl border w-full p-1" value={d.Content || 'Amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'} onChange={(e) => { onChange("details", 0, { Content: e.target.value, }); }} />
               {bullets.length > 0 && bullets.map((b, j) => !b.isDeleted && (

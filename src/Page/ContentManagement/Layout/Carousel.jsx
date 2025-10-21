@@ -14,6 +14,14 @@ export default function Carousel({ details, bullets, images, CATEGORY_ID, onChan
           <>
             {details.map((d, i) => (
               <div key={i} className="">
+                  <input
+                  className="text-lg font-semibold uppercase border p-2 mb-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  value={d.Header ?? ""}
+                  placeholder="Enter header..."
+                  onChange={(e) =>
+                    onChange("details", i, { Header: e.target.value })
+                  }
+                />
                 <input
                   className="text-5xl font-semibold uppercase border p-2 mb-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
                   value={d.Title ?? ""}
@@ -106,94 +114,96 @@ export default function Carousel({ details, bullets, images, CATEGORY_ID, onChan
           </button> */}
         </div>
 <div className="flex gap-6">
-  {bullets.map((img, i) => {
-    const bullet = bullets[i];
-    if (!bullet || bullet.isDeleted || img.isDeleted) return null;
-
-    return (
-      <div
-        key={i}
-        className="relative border rounded-xl shadow-md p-4 bg-white max-w-md"
+ {images.map((img, i) => {
+  const bullet = bullets[i] || {};
+  if (!img || img.isDeleted || bullet.isDeleted) return null; // 🌸 hide deleted
+  
+  return (
+    <div
+      key={i}
+      className="relative border rounded-xl shadow-md p-4 bg-white max-w-md"
+    >
+      {/* Remove Button */}
+      <button
+        type="button"
+        onClick={() => {
+          onChange("images", i, { ...img, isDeleted: true });
+          onChange("bullets", i, { ...bullet, isDeleted: true });
+        }}
+        className="absolute -top-3 -right-3 text-white bg-red-500 p-2 pl-3 pr-3 rounded-full hover:bg-red-700"
       >
-        {/* Remove Button */}
-        <button
-          type="button"
-          onClick={() => {
-            onChange("images", i, { ...img, isDeleted: true });
-            onChange("bullets", i, { ...bullet, isDeleted: true });
-          }}
-          className="absolute -top-3 -right-3 text-white bg-red-500 p-2 pl-3 pr-3 rounded-full hover:bg-red-7700"
+        ✕
+      </button>
+
+      {/* Image or Upload Placeholder */}
+      {img?.IMG_URL || img?.preview ? (
+        <img
+          src={img.IMG_URL || img.preview}
+          alt={`Preview ${i}`}
+          className="w-full h-64 object-cover border rounded mb-4"
+        />
+      ) : (
+        <label
+          htmlFor={`file-upload-${i}`}
+          className="w-full h-64 flex items-center justify-center border-2 border-dashed rounded bg-gray-100 text-gray-400 mb-4 cursor-pointer hover:bg-gray-200"
         >
-          ✕
-        </button>
-
-        {/* Image or Upload Placeholder */}
-        {images[i]?.IMG_URL || images[i]?.preview ? (
-          <img
-            src={images[i].IMG_URL || img.preview}
-            alt={`Preview ${i}`}
-            className="w-full h-64 object-cover border rounded mb-4"
+          + Upload Image
+          <input
+            id={`file-upload-${i}`}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              if (e.target.files?.[0]) {
+                const file = e.target.files[0];
+                const newImage = {
+                  CATEGORY_ID,
+                  IMG_URL: URL.createObjectURL(file),
+                  Upload_Date: new Date().toISOString(),
+                  Upload_By: "currentUser",
+                  CONTENT_ID: 0,
+                  preview: URL.createObjectURL(file),
+                  isDeleted: false,
+                };
+                onChange("images", i, newImage);
+              }
+            }}
           />
-        ) : (
-          <label
-            htmlFor={`file-upload-${i}`}
-            className="w-full h-64 flex items-center justify-center border-2 border-dashed rounded bg-gray-100 text-gray-400 mb-4 cursor-pointer hover:bg-gray-200"
-          >
-            + Upload Image
-            <input
-              id={`file-upload-${i}`}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                if (e.target.files?.[0]) {
-                  const file = e.target.files[0];
-                  const newImage = {
-                    CATEGORY_ID,
-                    IMG_URL: URL.createObjectURL(file),
-                    Upload_Date: new Date().toISOString(),
-                    Upload_By: "currentUser",
-                    CONTENT_ID: 0,
-                    preview: URL.createObjectURL(file),
-                    isDeleted: false,
-                  };
-                  onChange("images", i, newImage);
-                }
-              }}
-            />
-          </label>
-        )}
+        </label>
+      )}
 
-        {/* Header */}
-        <input
-          className="text-base font-semibold text-gray-700 border rounded p-2 mb-2 w-full"
-          placeholder="Enter header..."
-          value={bullet.Header || ""}
-          onChange={(e) =>
-            onChange("bullets", i, { ...bullet, Header: e.target.value })
-          }
-        />
+      {/* Header */}
+      <input
+        className="text-base font-semibold text-gray-700 border rounded p-2 mb-2 w-full"
+        placeholder="Enter header..."
+        value={bullet.Header || ""}
+        onChange={(e) =>
+          onChange("bullets", i, { ...bullet, Header: e.target.value })
+        }
+      />
 
-        {/* Detail */}
-        <textarea
-          className="text-sm text-gray-600 border rounded p-2 resize-none w-full"
-          placeholder="Enter details..."
-          value={bullet.Detail || ""}
-          rows={3}
-          onChange={(e) =>
-            onChange("bullets", i, { ...bullet, Detail: e.target.value })
-          }
-        />
-      </div>
-    );
-  })}
+      {/* Detail */}
+      <textarea
+        className="text-sm text-gray-600 border rounded p-2 resize-none w-full"
+        placeholder="Enter details..."
+        value={bullet.Detail || ""}
+        rows={3}
+        onChange={(e) =>
+          onChange("bullets", i, { ...bullet, Detail: e.target.value })
+        }
+      />
+    </div>
+  );
+})}
+
+
 
 </div>
 
 
 
         {/* Thumbnails below */}
-        <div className="flex gap-2 mt-4 overflow-x-auto">
+        {/* <div className="flex gap-2 mt-4 overflow-x-auto">
           {images.map((img, i) => !img.isDeleted && (
             <img
               key={i}
@@ -204,7 +214,7 @@ export default function Carousel({ details, bullets, images, CATEGORY_ID, onChan
               onClick={() => setCurrentImage(i)}
             />
           ))}
-        </div>
+        </div> */}
       </div>
 
     </div>

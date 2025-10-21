@@ -9,17 +9,26 @@ export function CM_Navbar({ isCollapsed, setIsCollapsed }) {
   const path = location.pathname;
 
   const hideFlexBlock = path === "/ContentManagement/Login" || path === "/ContentManagement/Register";
-
-   const pageTitles = {
+const pageTitles = {
     "/ContentManagement/Dashboard": "Dashboard",
     "/ContentManagement/Pages": "Pages",
     "/ContentManagement/Galleries": "Galleries",
     "/ContentManagement/Maintenance/Users": "Maintenance > Users",
     "/ContentManagement/Maintenance/Roles": "Maintenance > Roles",
     "/ContentManagement/Maintenance/Permission": "Maintenance > Permission",
-    // add more routes here
   };
-   const currentPage = pageTitles[location.pathname] || "";
+
+  let currentPage = pageTitles[path] || "";
+
+  // 🌼 Handle dynamic routes like /ContentManagement/Pages/Editor/vision-mission
+if (path.startsWith("/ContentManagement/Pages/Editor/")) {
+  const section = path.split("/").pop(); // get last part
+  const readable = section
+    .replace(/-/g, " ")        // convert hyphens to spaces
+    .replace(/\b\w/g, c => c.toUpperCase()); // capitalize each word
+  currentPage = `Pages > ${readable}`;
+}
+
   return (
     <div className="">
     <header className={`fixed top-0 transition-all duration-300 ease-in-out z-50 p-3 bg-white

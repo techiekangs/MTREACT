@@ -47,7 +47,7 @@ export default function Main() {
       {sections.filter((section) => section.PAGE_ID == "Homepage" && section.SECTION_ID !== "STATS_MAIN") // 🌸 exclude Homepage
         .map((section, index) => (
           <section key={section.CONTENT_ID || index} className="snap-start">
-            <About category={section.SECTION_ID} layoutStyle={section.LayoutStyle} />
+            <About category={section.SECTION_ID} layoutStyle={section.LayoutStyle} title={section.Title}/>
           </section>
         ))}
     </div>
