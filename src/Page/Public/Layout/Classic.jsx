@@ -69,7 +69,7 @@ export default function Public_Classic({ details, bullets, images, title  }) {
 
         <button className="bg-pink-800 rounded-sm cursor-pointer text-pink-50 p-2.5 mt-4">
           <Link
-                to={`/${title}/`}          // lowercase for consistency
+                to={`/0/${title}/`}          // lowercase for consistency
                 state={{ categoryID: details[0].CATEGORY_ID, index: 0 }}
                 // className="bg-pink-700 hover:bg-pink-800 text-pink-50 p-3 rounded-full cursor-pointer transition-transform transform hover:scale-110 mt-2"
               >

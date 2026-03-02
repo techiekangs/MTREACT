@@ -9,7 +9,7 @@ export default function Public_Card({ details, bullets, images, title }) {
 
   const validImages = images && images.length > 0 ? images : [];
   const isValid =
-    new Date(details[currentIndex]?.Expiration_Date) > new Date();
+    new Date(details[0]?.Expiration_Date) > new Date();
 
   const handlePrev = () => {
     setCurrentIndex((prev) =>
@@ -26,7 +26,7 @@ export default function Public_Card({ details, bullets, images, title }) {
   return (
     <>
       {isValid && (
-        <div className="relative grid grid-cols-1 md:grid-cols-2 rounded-xl overflow-hidden shadow-lg h-screen pt-55 pb-55 p-65">
+        <div className="relative grid grid-cols-1 md:grid-cols-2 rounded-xl overflow-hidden shadow-lg h-screen pt-50 pb-50 p-65">
           {/* Decorative Shape */}
           <div
             className="absolute bottom-[75px] left-[175px] w-[200px] h-[200px] md:w-[200px] md:h-[200px] 
@@ -76,7 +76,7 @@ export default function Public_Card({ details, bullets, images, title }) {
                   return (
                     <>
                       {finalText}{" "}
-                      <Link to={`/${title}/`}          // lowercase for consistency
+                      <Link to={`/0/${title}/`}          // lowercase for consistency
                         state={{ categoryID: details[currentIndex].CATEGORY_ID, index: currentIndex }}>
                         <span className="text-pink-700 hover:underline hover:text-pink-900 font-semibold cursor-pointer transition-all duration-200 inline-flex items-center">
                           Read more

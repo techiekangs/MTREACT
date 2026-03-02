@@ -86,7 +86,7 @@ export default function Public_Carousel({ details = [], bullets = [], images = [
 
                     <div className="mt-6 flex justify-start">
                       <Link
-                        to={`/${title}/${bullet?.Header
+                        to={`/0/${title}/${bullet?.Header
                           .trim()
                           .replace(/\s+/g, '-')      // replace spaces with hyphens
                           .replace(/[^\w-]/g, '')    // remove special characters

@@ -4,11 +4,32 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
-    <title>Vite + React</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <title>Manila Teachers Online</title>
   </head>
   <body>
     <div id="root"></div>
+
+ <script>
+  (function () {
+    const path = window.location.pathname; // e.g., "/mtonline-dev.com/About"
+    const hash = window.location.hash;     // e.g., ""
+    const base = "";
+
+    // Only redirect if NOT homepage and no hash yet
+    const isHome = path === base || path === base + "/";
+    if (!isHome && !hash) {
+      const subPath = path.substring(base.length); // "/About"
+      const newUrl = window.location.origin + base + "/#" + subPath;
+      window.location.replace(newUrl);
+    }
+  })();
+</script>
+
+
+
+
+    <!-- React entry point -->
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

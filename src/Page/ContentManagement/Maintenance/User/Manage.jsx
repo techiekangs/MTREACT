@@ -84,7 +84,7 @@ const content = useMemo(
     <div className="bg-[#e6f4ff] p-8">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-4xl font-bold text-[#004c91]">User Details</h1>
-        <a href="/ContentManagement/Maintenance/User"><button className="bg-[#0074d9] hover:bg-[#005fa3] text-white px-4 py-2 rounded-md text-sm font-medium">
+        <a href="#/ContentManagement/Maintenance/User"><button className="bg-[#0074d9] hover:bg-[#005fa3] text-white px-4 py-2 rounded-md text-sm font-medium">
           ← Back to List
         </button></a>
       </div>

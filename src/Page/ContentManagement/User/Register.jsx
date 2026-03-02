@@ -8,38 +8,39 @@ export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
-   const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("Base URL:", import.meta.env.VITE_API_BASE_URL);
-console.log("Sending login with:", username, password);
-
+    console.log("Sending login with:", username, password);
     try {
       const response = await api.post(
-      "/MTForms/User/Login",
-      {
-        Username: username,
-        Password: password,
-      },
-      {
-        headers: {
-          "Authorization": "bearer",   // placeholder or real token
-          "IpAddress": "::1",          // or fetch client IP another way
-          "AppName": "MT",             // whatever your API expects
+        "/Users/Detail/Add?EmployeeNumber=",
+        {
+          EmailAddress: formData.emailAddress,
+          ContactNumber: formData.contactNumber
         },
-      }
-    );
+        {
+          headers: {
+            "Authorization": "bearer",
+            "IpAddress": "::1",
+            "AppName": "MT",
+          },
+        }
+      );
 
       console.log("Login success:", response.data);
-
+      const userData = response.data;
+      localStorage.setItem("user", JSON.stringify(userData));
       // Example: save token
       localStorage.setItem("token", response.data.token);
 
       // Redirect
-      window.location.href = "/ContentManagement/Dashboard";
+      window.location.href = "#/ContentManagement/Dashboard";
     } catch (error) {
       console.error("Login failed:", error);
       alert("Invalid username or password ❌");
     }
+
   };
 
 
@@ -111,7 +112,7 @@ console.log("Sending login with:", username, password);
             </button>
           </div>
         </div>
-         <div className="mb-4">
+        <div className="mb-4">
           <label className="text-sm text-gray-600">Confirm Password</label>
           <div className="flex items-center border rounded-lg px-3 py-2 mt-1">
             <Lock className="text-gray-500 mr-2" size={18} />
@@ -143,10 +144,10 @@ console.log("Sending login with:", username, password);
         <p className="text-sm text-center text-gray-600 mt-4">
           Already have an account?{" "}
           <Link
-          to="/ContentManagement/Login"
-          className="text-violet-600 font-semibold hover:underline"
+            to="/ContentManagement/Login"
+            className="text-violet-600 font-semibold hover:underline"
           >
-          Login
+            Login
           </Link>
         </p>
       </form>

@@ -5,13 +5,16 @@ import api from "../../../API/api.js";
 
 export default function SectionsTable() {
   const [sections, setSections] = useState([]);
+  const [permission, setPerm] = useState([]);
   const [selectedPage, setSelectedPage] = useState("all");
+  const user = JSON.parse(localStorage.getItem("user"));
+  const username = user?.User_ID;
 
   useEffect(() => {
     const fetchSections = async () => {
       try {
         const response = await api.get("/ContentManagement/Detail/Sections", {
-          params: { SectionId: 0 },
+          params: { SectionId: '' },
           headers: {
             Authorization: "bearer " + localStorage.getItem("token"),
             IpAddress: "::1",
@@ -30,6 +33,28 @@ export default function SectionsTable() {
     fetchSections();
   }, []);
 
+  useEffect(() => {
+    const fetchPermission = async () => {
+      try {
+        const response = await api.get("/Users/Maintenance/ContentList", {
+          params: { UserId: username },
+          headers: {
+            Authorization: "bearer " + localStorage.getItem("token"),
+            IpAddress: "::1",
+            AppName: "MT",
+          },
+        });
+
+        console.log("✅ Sections loaded:", response.data.List);
+        setPerm(Array.isArray(response.data.List) ? response.data.List : []);
+      } catch (error) {
+        console.error("❌ Failed to load sections:", error);
+      }
+    };
+
+    fetchPermission();
+  }, []);
+
   const pageOptions = useMemo(() => {
     const ids = sections.map((s) => s.PAGE_ID);
     return ["all", ...new Set(ids)];
@@ -41,6 +66,17 @@ export default function SectionsTable() {
       ? sections
       : sections.filter((sec) => sec.PAGE_ID === selectedPage);
 
+  // 🌺 Merge filteredSections with permissions
+  const mergedSections = filteredSections.map((sec) => {
+    // Find the permission object that matches this section's CONTENT_ID
+    const perm = permission.find((p) => p.Title === sec.Title);
+
+    return {
+      ...sec,
+      allowed: perm ? perm.Allowed : false   // set allowed flag
+    };
+  });
+const allowedSections = mergedSections.filter(sec => sec.allowed);
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-4">
@@ -63,77 +99,77 @@ export default function SectionsTable() {
         </select>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full border border-sky-200 rounded-xl shadow-lg overflow-hidden">
-          <thead className="bg-gradient-to-r from-sky-700 to-sky-900 text-sky-50">
-            <tr>
-              <th className="px-4 py-3 text-left font-semibold">Title</th>
-              <th className="px-4 py-3 text-left font-semibold">Last Modified</th>
-              <th className="px-4 py-3 text-left font-semibold">Modified By</th>
-              <th className="px-4 py-3 text-center font-semibold">Actions</th>
-            </tr>
-          </thead>
+     <div className="overflow-x-auto">
+  <table className="min-w-full border border-sky-200 rounded-xl shadow-lg overflow-hidden">
+    <thead className="bg-gradient-to-r from-sky-700 to-sky-900 text-sky-50">
+      <tr>
+        <th className="px-4 py-3 text-left font-semibold">Title</th>
+        <th className="px-4 py-3 text-left font-semibold">Last Modified</th>
+        <th className="px-4 py-3 text-left font-semibold">Modified By</th>
+        <th className="px-4 py-3 text-center font-semibold">Actions</th>
+      </tr>
+    </thead>
 
-          <tbody className="divide-y divide-sky-100">
-            {filteredSections.length > 0 ? (
-              filteredSections.map((sec, idx) => (
-                <tr
-                  key={idx}
-                  className="group hover:bg-sky-300  transition-colors duration-150 odd:bg-white even:bg-sky-50"
+    <tbody className="divide-y divide-sky-100">
+      {allowedSections.length > 0 ? (
+        allowedSections.map((sec, idx) => (
+          <tr
+            key={idx}
+            className="group hover:bg-sky-300 transition-colors odd:bg-white even:bg-sky-50"
+          >
+            <td className="px-4 py-3 font-medium text-sky-700 group-hover:text-sky-100">
+              <Link
+                to={`/ContentManagement/Pages/Editor/${sec.Title
+                  .trim()
+                  .replace(/\s+/g, '-')
+                  .replace(/[^\w-]/g, '')
+                  .toLowerCase()}`}
+                state={{ layoutStyle: sec.LayoutStyle, sectionID: sec.SECTION_ID }}
+                className="hover:text-sky-100 hover:underline transition-colors"
+              >
+                {sec.Title}
+              </Link>
+            </td>
+            <td className="px-4 py-3 text-gray-600 group-hover:text-sky-100">
+              {sec.LastModified ? new Date(sec.LastModified).toLocaleString() : ""}
+            </td>
+            <td className="px-4 py-3 text-gray-600 group-hover:text-sky-100">{sec.ModifiedBy}</td>
+            <td className="px-4 py-3 text-center space-x-3 group-hover:text-sky-100">
+              {sec.ViewURL && (
+                <a
+                  href={sec.ViewURL.replace("~", "")}
+                  className="text-blue-600 hover:text-blue-800 font-medium"
                 >
-                  <td className="px-4 py-3 font-medium text-sky-700 group-hover:text-sky-100">
-<Link
-  to={`/ContentManagement/Pages/Editor/${sec.Title
-    .trim()
-    .replace(/\s+/g, '-')      // replace spaces with hyphens
-    .replace(/[^\w-]/g, '')    // remove special characters
-    .toLowerCase()}`}          // lowercase for consistency
-  state={{ layoutStyle: sec.LayoutStyle, sectionID: sec.SECTION_ID }}
-  className="hover:text-sky-100 hover:underline transition-colors"
->
-  {sec.Title}
-</Link>
+                  View
+                </a>
+              )}
+              {sec.EditURL && (
+                <a
+                  href={sec.EditURL}
+                  className="text-green-600 hover:text-green-800 font-medium"
+                >
+                  Edit
+                </a>
+              )}
+            </td>
+          </tr>
+        ))
+      ) : (
+        <tr>
+          <td
+            colSpan="4"
+            className="text-center px-4 py-8 text-gray-500 italic"
+          >
+            🌼 No sections found
+          </td>
+        </tr>
+      )}
+    </tbody>
+  </table>
+</div>
 
-                  </td>
-                  <td className="px-4 py-3 text-gray-600 group-hover:text-sky-100">
-                    {sec.LastModified
-                      ? new Date(sec.LastModified).toLocaleString()
-                      : ""}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600 group-hover:text-sky-100">{sec.ModifiedBy}</td>
-                  <td className="px-4 py-3 text-center space-x-3 group-hover:text-sky-100">
-                    {sec.ViewURL && (
-                      <a
-                        href={sec.ViewURL.replace("~", "")}
-                        className="text-blue-600 hover:text-blue-800 font-medium"
-                      >
-                        View
-                      </a>
-                    )}
-                    {sec.EditURL && (
-                      <a
-                        href={sec.EditURL}
-                        className="text-green-600 hover:text-green-800 font-medium"
-                      >
-                        Edit
-                      </a>
-                    )}
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td
-                  colSpan="4"
-                  className="text-center px-4 py-8 text-gray-500 italic"
-                >
-                  🌼 No sections found
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+
+
     </div>
   );
 }

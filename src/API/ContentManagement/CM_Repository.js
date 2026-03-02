@@ -1,6 +1,20 @@
 import api from "../api"; // your axios instance
 
 // Fetch details by category
+export const getSection = async (sectionId) => {
+  const response = await api.get("/ContentManagement/Detail/Sections", {
+    params: { SectionId: sectionId },
+    headers: {
+      Authorization: "bearer " + localStorage.getItem("token"),
+      IpAddress: "::1",
+      AppName: "MT",
+    },
+  });
+  console.log("response data:", response.data)
+  return response.data;
+};
+
+// Fetch details by category
 export const getSectionDetails = async (categoryId) => {
   const response = await api.get("ContentManagement/Detail/List/Quote", {
     params: { CategoryId: categoryId },
@@ -13,7 +27,30 @@ export const getSectionDetails = async (categoryId) => {
   console.log("response data:", response.data)
   return response.data;
 };
-
+export const getContacts = async (categoryId) => {
+  const response = await api.get("ContentManagement/Detail/List/Contacts", {
+    params: { CategoryId: categoryId },
+    headers: {
+      Authorization: "bearer " + localStorage.getItem("token"),
+      IpAddress: "::1",
+      AppName: "MT",
+    },
+  });
+  console.log("response data:", response.data)
+  return response.data;
+};
+export const getSectionContents= async (categoryId) => {
+  const response = await api.get("ContentManagement/Detail/List/SectionContents", {
+    params: { CategoryId: categoryId },
+    headers: {
+      Authorization: "bearer " + localStorage.getItem("token"),
+      IpAddress: "::1",
+      AppName: "MT",
+    },
+  });
+  console.log("response data:", response.data)
+  return response.data;
+};
 // Save details
 export const saveSectionDetails = async (payload) => {
   console.log("data payload:", payload);
@@ -90,6 +127,44 @@ export const saveSectionDetails = async (payload) => {
 
   return results;
 };
+export const saveContacts = async (payload) => {
+  console.log("data payload:", payload);
+
+  if (!payload || payload.length === 0) return null;
+
+  const headers = {
+    Authorization: "bearer " + localStorage.getItem("token"),
+    IpAddress: "::1",
+    AppName: "MT",
+  };
+
+  const results = [];
+
+
+    let response;
+
+
+      response = await api.post(
+        "MTBooking/Update/Contacts",
+        {
+          Contact_No: payload.Contact_No,
+          Tel_No: payload.Tel_No,
+          Address: payload.Address,
+          Location: payload.Location,
+          Email: payload.Email,
+          Schedule1: payload.Schedule1,
+          Schedule2: payload.Schedule2,
+          Schedule3: payload.Schedule3,
+          CATEGORY_ID: payload.CATEGORY_ID,
+        },
+        { headers }
+      );
+
+    results.push(response.data);
+  
+
+  return results;
+};
 export const saveLayoutStyle = async (categoryId, layoutStyle) => {
   console.log("data layout:", { SectionId: categoryId, LayoutStyle: layoutStyle });
 
@@ -149,6 +224,9 @@ export const saveBullets = async (payload) => {
           CATEGORY_ID: item.CATEGORY_ID,
           HEADER: item.Header,
           DETAIL: item.Detail,
+          Effectivity_Date: item.Effectivity_Date,
+          Expiration_Date: item.Expiration_Date,
+          Show_Date: item.Show_Date,
           CONTENT_ID: item.CONTENT_ID ?? 0,
         },
         { headers }
@@ -162,6 +240,9 @@ export const saveBullets = async (payload) => {
           CATEGORY_ID: item.CATEGORY_ID,
           HEADER: item.Header,
           DETAIL: item.Detail,
+          Effectivity_Date: item.Effectivity_Date,
+          Expiration_Date: item.Expiration_Date,
+          Show_Date: item.Show_Date,
           CONTENT_ID: item.CONTENT_ID,
         },
         { headers }
@@ -203,7 +284,8 @@ export const saveImages = async (payload) => {
           CONTENT_ID: item.CONTENT_ID,
           FILE_NAME: item.FILE_NAME,
           FILE_TYPE: item.FILE_TYPE,
-          FILE_SIZE: item.FILE_SIZE
+          FILE_SIZE: item.FILE_SIZE,
+          FILE_BYTE: item.FILE_BYTE
         },
         { headers }
       );
@@ -220,7 +302,8 @@ export const saveImages = async (payload) => {
           CONTENT_ID: item.CONTENT_ID ?? 0,
           FILE_NAME: item.FILE_NAME,
           FILE_TYPE: item.FILE_TYPE,
-          FILE_SIZE: item.FILE_SIZE
+          FILE_SIZE: item.FILE_SIZE,
+          FILE_BYTE: item.FILE_BYTE
         },
         { headers }
       );
@@ -237,7 +320,8 @@ export const saveImages = async (payload) => {
           CONTENT_ID: item.CONTENT_ID,
           FILE_NAME: item.FILE_NAME,
           FILE_TYPE: item.FILE_TYPE,
-          FILE_SIZE: item.FILE_SIZE
+          FILE_SIZE: item.FILE_SIZE,
+          FILE_BYTE: item.FILE_BYTE
         },
         { headers }
       );
@@ -247,4 +331,23 @@ export const saveImages = async (payload) => {
   }
 
   return results;
+};
+
+export const userLogin = async (username, password) => {
+
+  const response = await api.post(
+    "Users/Login",
+    { 
+      Username: username, 
+      Password: password 
+    }, // 👈 send as body
+    {
+      headers: {
+        IpAddress: "::1",
+        AppName: "MT",
+      },
+    }
+  );
+
+  return response.data;
 };

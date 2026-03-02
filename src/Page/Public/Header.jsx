@@ -52,10 +52,10 @@ useEffect(() => {
   }, [category]);
   return (
     <header
-      className="relative min-h-screen bg-cover bg-center pt-100 rounded-b-4xl"
+      className="relative min-h-screen bg-cover bg-center pt-75 rounded-b-4xl"
       style={{
          backgroundImage: `
-      linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)),
+      linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.9)),
       url("https://images.unsplash.com/photo-1503676260728-1c00da094a0b")
     `
       }}

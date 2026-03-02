@@ -1,18 +1,29 @@
 import { useEffect, useState } from "react";
 import { CheckCircle } from "lucide-react"
-import { getSectionDetails, saveBullets, saveImages, saveLayoutStyle, saveSectionDetails } from "../../../../API/ContentManagement/CM_Repository"; // adjust path if needed
+import { useNavigate } from 'react-router-dom';
+import { getContacts, getSectionDetails, saveBullets, saveImages, saveLayoutStyle, saveSectionDetails, saveContacts } from "../../../../API/ContentManagement/CM_Repository"; // adjust path if needed
 //SELECT_LAYOUT SP//
 import Classic from "../../Layout/Classic";
 import Carousel from "../../Layout/Carousel";
 import Card from "../../Layout/Card";
+import Contact from "../../Layout/Contact";
 import CardImg from "../../../../Components/Images/Card.png";
 import CarouselImg from "../../../../Components/Images/Carousel.png";
 import ClassicImg from "../../../../Components/Images/Classic.png";
+import Modal from "../../../../Components/Common/Modal";
 
 export default function EditContent({ category, layoutStyle }) {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("current"); // current | compare
   const [effectivity_date, setEffectivityDate] = useState("");
   const [expiration_date, setExpirationDate] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState('');
+  const [modalContent, setModalContent] = useState('');
+  const [modalVariant, setModalVariant] = useState('default');
+
+  let fetchedData;
+
   console.log("layoutStyle: ", layoutStyle);
   const [selectedLayout, setSelectedLayout] = useState(
     layoutStyle || ""
@@ -31,6 +42,11 @@ export default function EditContent({ category, layoutStyle }) {
     images: [],
   });
 
+  const [editedContact, setEditedContact] = useState({
+    contact: {},
+    bullets: []
+  });
+
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState("");
   const [error, setError] = useState("");
@@ -40,22 +56,34 @@ export default function EditContent({ category, layoutStyle }) {
   useEffect(() => {
     const fetchSectionDetails = async () => {
       try {
-        const res = await getSectionDetails(category);
+        const res = category === "CONTACT_MAIN"
+          ? await getContacts(category)
+          : await getSectionDetails(category);
         console.log("res:", res)
 
-        const fetchedData = {
-          details: res?.Details ?? [],
-          bullets: (res?.Bullets ?? []).map((b) => ({
-            ...b,
-            isDeleted: false, // 🌸 add flag for bullets
-          })),
-          images: (res?.Images ?? []).map((img) => ({
-            ...img,
-            isDeleted: false, // 🌼 add flag for images
-          })),
-          contact: res?.Contact ?? {},
-        };
-
+        if (category === "CONTACT_MAIN") {
+          fetchedData = {
+            contact: res?.Contact ?? {},
+            bullets: (res?.Bullets ?? []).map((b) => ({
+              ...b,
+              isDeleted: false, // 🌸 add flag for bullets
+            }))
+          };
+        }
+        else {
+          fetchedData = {
+            details: res?.Details ?? [],
+            bullets: (res?.Bullets ?? []).map((b) => ({
+              ...b,
+              isDeleted: false, // 🌸 add flag for bullets
+            })),
+            images: (res?.Images ?? []).map((img) => ({
+              ...img,
+              isDeleted: false, // 🌼 add flag for images
+            })),
+            contact: res?.Contact ?? {},
+          };
+        }
         setOriginalData(fetchedData);
         const cloned = JSON.parse(JSON.stringify(fetchedData));
         cloned.layoutStyle = layoutStyle || 0;
@@ -63,7 +91,9 @@ export default function EditContent({ category, layoutStyle }) {
         setEffectivityDate(fetchedData.details?.[0]?.Effectivity_Date || "");
         setExpirationDate(fetchedData.details?.[0]?.Expiration_Date || "");
 
-        setEditedData(cloned); // deep clone
+        setEditedData(cloned); // deep clone       
+        setEditedContact(cloned);
+        console.log("Contact", cloned);
         console.log(fetchedData);
       } catch (error) {
         console.error("❌ Failed to load section details:", error);
@@ -91,6 +121,38 @@ export default function EditContent({ category, layoutStyle }) {
       return updated;
     });
   };
+  const handleChangeContact = (field, value) => {
+    setEditedContact(prev => ({
+      ...prev,
+      contact: {
+        ...prev.contact,
+        [field]: value
+      }
+    }));
+    console.log("📌 Updated editedContact:", editedContact);
+  };
+const handleChangeBullet = (index, partialUpdate) => {
+  setEditedContact((prev) => {
+    if (!Array.isArray(prev.bullets)) {
+      console.warn("bullets is not an array – resetting");
+      return { ...prev, bullets: [] };
+    }
+
+    const newBullets = prev.bullets.map((item, i) =>
+      i === index ? { ...item, ...partialUpdate } : item
+    );
+
+    console.log("📌 Updated bullets:", newBullets); // ✅ logs the actual new value
+console.log("📌 Previous bullets:", prev.bullets); 
+console.log("📌 editedcontact bullets:", editedContact.bullets); 
+    return {
+      ...prev,
+      bullets: newBullets,
+    };
+  });
+};
+
+
 
   // 🌼 Handlers
   const handleFileChange = (e, i) => {
@@ -139,19 +201,52 @@ export default function EditContent({ category, layoutStyle }) {
       };
       console.log("saving..:", editedData.details[0]);
       const result = await saveSectionDetails(editedData.details);
+      console.log("saving..:", editedData.bullets[0]);
       const resultBullet = await saveBullets(editedData.bullets);
       const resultImages = await saveImages(editedData.images);
       const resultLayout = await saveLayoutStyle(category, editedData.layoutStyle);
-      navigate(location.pathname, {
-        replace: true,
-        state: { layoutStyle, sectionID: category }
-      });
-      alert("Section details saved successfully! 🌸");
+      // navigate(location.pathname, {
+      //   replace: true,
+      //   state: { layoutStyle, sectionID: category }
+      // });
+      setModalTitle("Success");
+      setModalContent("Section details saved successfully! 🌸");
+      setModalVariant("success");
+      setModalOpen(true);
     } catch (error) {
-      alert("Failed to save section details ❌", error);
+      // Error modal with red theme
+      setModalTitle("Error");
+      setModalContent(`Failed to save section details: ${error.message}`);
+      setModalVariant("error");
+      setModalOpen(true);
     }
   };
-
+  const handleSaveContact = async () => {
+    try {
+      const payload = {
+        contact: editedContact,
+        bullets: editedData.bullets,
+      };
+      console.log("saving Contact..:", editedContact);
+      const result = await saveContacts(editedContact.contact);
+      console.log("saving..:", editedContact.bullets);
+      const resultBullet = await saveBullets(editedContact.bullets);
+      // navigate(location.pathname, {
+      //   replace: true,
+      //   state: { layoutStyle, sectionID: category }
+      // });
+      setModalTitle("Success");
+      setModalContent("Section details saved successfully! 🌸");
+      setModalVariant("success");
+      setModalOpen(true);
+    } catch (error) {
+      // Error modal with red theme
+      setModalTitle("Error");
+      setModalContent(`Failed to save section details: ${error.message}`);
+      setModalVariant("error");
+      setModalOpen(true);
+    }
+  };
   const handleClear = () => {
     setEditedData(JSON.parse(JSON.stringify(originalData)));
     setPreview("");
@@ -167,12 +262,14 @@ export default function EditContent({ category, layoutStyle }) {
     1: Classic,
     2: Carousel,
     3: Card,
+    4: Contact
   };
 
   const layoutOptions = [
     { id: 1, key: "Classic", img: ClassicImg, label: "Classic" },
     { id: 2, key: "Carousel", img: CarouselImg, label: "Carousel" },
     { id: 3, key: "Card", img: CardImg, label: "Card" },
+    { id: 4, key: "Contact", img: CardImg, label: "Contact" },
   ];
 
 
@@ -194,6 +291,16 @@ export default function EditContent({ category, layoutStyle }) {
     });
   };
 
+  const addItemContact = (field, newItem) => {
+    console.log('addItem called!');
+    setEditedContact((prev) => {
+      const updated = { ...prev };
+      updated[field] = [...(prev[field] || []), newItem];
+      console.log(`➕ Added to ${field}:`, updated[field]);
+      return updated;
+    });
+  };
+
 
   // Remove item from an array field
   // const removeItem = (field, index) => {
@@ -205,6 +312,19 @@ export default function EditContent({ category, layoutStyle }) {
   //   });
   // };
   const removeItem = (field, index) => {
+    setEditedContact((prev) => {
+      const updated = { ...prev };
+
+      updated[field] = prev[field].map((item, i) =>
+        i === index ? { ...item, isDeleted: true } : item
+      );
+
+      console.log(`🚫 Marked index ${index} from ${field} as deleted:`, updated[field]);
+      return updated;
+    });
+  };
+
+  const removeItemContact = (field, index) => {
     setEditedData((prev) => {
       const updated = { ...prev };
 
@@ -217,11 +337,24 @@ export default function EditContent({ category, layoutStyle }) {
     });
   };
 
-
   const SelectedLayout = layouts[layoutStyle] || Classic;
   console.log("selectedLayout:", SelectedLayout);
   return (
-    <div className="p-4 space-y-6 rounded">
+    <div className="p-4 rounded">
+      <Modal
+        isOpen={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+          // Reload page with parameters only on success
+          if (modalVariant === "success") {
+            navigate(0); // This forces a page reload in React Router v6
+          }
+        }}
+        title={modalTitle}
+        content={modalContent}
+        variant={modalVariant}
+        size="md"
+      />
       {/* 🌼 Tabs */}
       <div className="flex items-center border-b pb-2">
         {/* Left side buttons */}
@@ -276,18 +409,30 @@ export default function EditContent({ category, layoutStyle }) {
         >
           {/* 🌸 Left Column - Content & Bullets */}
           <div
-            className={`space-y-6 bg-sky-50 m-2 p-6 transition-all duration-500 ${docked ? "col-span-2" : "col-span-1"
+            className={`space-y-6 bg-sky-50 pt-4 transition-all duration-500 ${docked ? "col-span-2" : "col-span-1"
               }`}
           >
-            <SelectedLayout
-              details={editedData.details}
-              bullets={editedData.bullets}
-              images={editedData.images}
-              CATEGORY_ID={category}
-              onChange={handleChange}
-              addItem={addItem}
-              removeItem={removeItem}
-            />
+            {category === "CONTACT_MAIN" ? (
+              <SelectedLayout
+                details={editedContact.contact}
+                bullets={editedContact.bullets}
+                CATEGORY_ID={category}
+                onChange={handleChangeContact}
+                onChange2={handleChangeBullet}
+                addItem={addItemContact}
+                removeItem={removeItemContact}
+              />
+            ) : (
+              <SelectedLayout
+                details={editedData.details}
+                bullets={editedData.bullets}
+                images={editedData.images}
+                CATEGORY_ID={category}
+                onChange={handleChange}
+                addItem={addItem}
+                removeItem={removeItem}
+              />
+            )}
 
 
             {/* Bullets
@@ -330,61 +475,68 @@ export default function EditContent({ category, layoutStyle }) {
                 ✕
               </button>
 
-  
-                <div  className="space-y-2">
-                  <label className="block font-semibold text-sky-700">
-                    Effectivity Date
-                  </label>
-                  <input
-                    type="date"
-                    value={editedData.details[0]?.Effectivity_Date?.split("T")[0] || ""}
-                    onChange={(e) => { handleChange("details", 0, { Effectivity_Date: e.target.value, }); }}
-                    className="border p-2 rounded w-full"
-                  />
-
-                  <label className="block font-semibold text-sky-700">
-                    Expiration Date
-                  </label>
-                  <input
-                    type="date"
-                    value={editedData.details[0]?.Expiration_Date?.split("T")[0] || ""}
-                    onChange={(e) => { handleChange("details", 0, { Expiration_Date: e.target.value, }); }}
-                    className="border p-2 rounded w-full"
-                  />
-                </div>
-
-              <label className="block font-semibold text-sky-700">
-                Layout Style
-              </label>
-              <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-                {layoutOptions.map((layout) => (
-                  <div
-                    key={layout.id}
-                    onClick={() => handleSelect(layout.id)}
-                    className={`flex items-center gap-3 border-2 rounded-lg cursor-pointer overflow-hidden 
-        transition-transform hover:scale-105 p-3
-        ${editedData.layoutStyle === layout.id
-                        ? "border-sky-500 shadow-md bg-blue-50" // highlight when selected
-                        : "border-gray-300"
-                      }`}
-                  >
-                    {/* Preview image */}
-                    <img
-                      src={layout.img}
-                      alt={layout.label}
-                      className="w-24 h-full object-contain rounded-md border"
+              {category !== "CONTACT_MAIN" && (
+                <>
+                  <div className="space-y-2">
+                    <label className="block font-semibold text-sky-700">
+                      Effectivity Date
+                    </label>
+                    <input
+                      type="date"
+                      value={editedData.details[0]?.Effectivity_Date?.split("T")[0] || ""}
+                      onChange={(e) => { handleChange("details", 0, { Effectivity_Date: e.target.value, }); }}
+                      className="border p-2 rounded w-full"
                     />
 
-                    {/* Layout Name */}
-                    <div className="font-medium text-gray-700">{layout.label}</div>
+                    <label className="block font-semibold text-sky-700">
+                      Expiration Date
+                    </label>
+                    <input
+                      type="date"
+                      value={editedData.details[0]?.Expiration_Date?.split("T")[0] || ""}
+                      onChange={(e) => { handleChange("details", 0, { Expiration_Date: e.target.value, }); }}
+                      className="border p-2 rounded w-full"
+                    />
                   </div>
-                ))}
-              </div>
 
 
-              <div className="flex gap-2 mt-4 justify-end">
+                  <label className="block font-semibold text-sky-700">
+                    Layout Style
+                  </label>
+
+                  <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+                    {layoutOptions.map((layout) => (
+                      <div
+                        key={layout.id}
+                        onClick={() => handleSelect(layout.id)}
+                        className={`flex items-center gap-3 border-2 rounded-lg cursor-pointer overflow-hidden 
+          transition-transform hover:scale-105 p-3
+          ${editedData.layoutStyle === layout.id
+                            ? "border-sky-500 shadow-md bg-blue-50"
+                            : "border-gray-300"
+                          }`}
+                      >
+                        {/* Preview image */}
+                        <img
+                          src={layout.img}
+                          alt={layout.label}
+                          className="w-24 h-full object-contain rounded-md border"
+                        />
+
+                        {/* Layout Name */}
+                        <div className="font-medium text-gray-700">
+                          {layout.label}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+
+              <div className="flex gap-2 mt-6 justify-end">
                 <button
-                  onClick={handleSave}
+                  onClick={category === "CONTACT_MAIN" ? handleSaveContact : handleSave }
                   className="px-4 py-2 bg-sky-600 text-white rounded hover:bg-sky-700"
                 >
                   Save
@@ -512,5 +664,6 @@ export default function EditContent({ category, layoutStyle }) {
         </div>
       )}
     </div>
+
   );
 }

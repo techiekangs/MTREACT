@@ -1,13 +1,14 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { getRoleList, getUserList } from "../../../../API/ContentManagement/Maintenance_Repository";
+import UserModal from './_UserAddModal';
 
 export default function User() {
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -65,11 +66,15 @@ export default function User() {
         </div>
 
         {/* Right: Add User button */}
-        <button className="bg-[#0074d9] hover:bg-[#005fa3] text-white px-4 py-2 rounded-md text-md font-medium">
+          <button
+        onClick={() => setIsModalOpen(true)} className="bg-[#0074d9] hover:bg-[#005fa3] text-white px-4 py-2 rounded-md text-md font-medium">
           + Add User
         </button>
       </div>
-
+      <UserModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
       <div className="overflow-x-auto">
         <table className="min-w-full border border-sky-200 rounded-xl shadow-lg overflow-hidden">
           <thead className="bg-gradient-to-r from-sky-700 to-sky-900 text-sky-50">

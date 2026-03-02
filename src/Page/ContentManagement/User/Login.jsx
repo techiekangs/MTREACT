@@ -2,49 +2,62 @@ import { useState } from "react";
 import { Eye, EyeOff, User, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
 import api from "../../../API/api.js";
+import { userLogin } from "../../../API/ContentManagement/CM_Repository";
+import Modal from "../../../Components/Common/Modal";
+import { useNavigate } from "react-router-dom";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState('');
+  const [modalContent, setModalContent] = useState('');
+  const [modalVariant, setModalVariant] = useState('default');
+  const navigate = useNavigate();
 
-   const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Base URL:", import.meta.env.VITE_API_BASE_URL);
-console.log("Sending login with:", username, password);
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
     try {
-      const response = await api.post(
-      "/Users/Login",
-      {
-        Username: username,
-        Password: password,
-      },
-      {
-        headers: {
-          "Authorization": "bearer",   // placeholder or real token
-          "IpAddress": "::1",          // or fetch client IP another way
-          "AppName": "MT",             // whatever your API expects
-        },
-      }
-    );
-
-      console.log("Login success:", response.data);
-
-      // Example: save token
-      localStorage.setItem("token", response.data.token);
-
-      // Redirect
-      window.location.href = "/ContentManagement/Dashboard";
+      const response = await userLogin(username, password);
+      console.log(response);
+      const userData = response;
+      localStorage.setItem("user", JSON.stringify(userData));
+      localStorage.setItem("token", response.token);
+         setModalTitle("Success");
+      setModalContent("Login success! 🌸");
+      setModalVariant("success");
+      setModalOpen(true);
     } catch (error) {
-      console.error("Login failed:", error);
-      alert("Invalid username or password ❌");
+      setModalTitle("Error");
+      setModalContent(`${error.message}`);
+      setModalVariant("error");
+      setModalOpen(true);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-
   return (
     <div>
+       <Modal
+        isOpen={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+          // Reload page with parameters only on success
+          if (modalVariant === "success") {
+            window.location.href = "/ContentManagement/Dashboard";
+          }
+        }}
+        title={modalTitle}
+        content={modalContent}
+        variant={modalVariant}
+        size="md"
+      />
       <h2 className="text-2xl font-semibold text-violet-700 text-center mb-6">
         Log In Your Account
       </h2>
@@ -109,10 +122,10 @@ console.log("Sending login with:", username, password);
         <p className="text-sm text-center text-gray-600 mt-4">
           Don’t have an account yet?{" "}
           <Link
-          to="/ContentManagement/Register"
-          className="text-violet-600 font-semibold hover:underline"
+            to="/ContentManagement/Register"
+            className="text-violet-600 font-semibold hover:underline"
           >
-          Create Account
+            Create Account
           </Link>
         </p>
       </form>

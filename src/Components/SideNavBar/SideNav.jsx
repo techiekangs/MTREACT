@@ -7,6 +7,7 @@ export default function SideNav({ isCollapsed }) {
   const [menu, setMenus] = useState([]);
    const [openMenus, setOpenMenus] = useState({});
 
+
   const toggleMenu = (key) => {
     setOpenMenus((prev) => ({
       ...prev,
